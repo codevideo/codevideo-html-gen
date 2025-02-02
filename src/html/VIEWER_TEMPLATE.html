@@ -133,7 +133,7 @@
      *
      * You can adjust the delay (in milliseconds) between steps.
      */
-    function animateModelChange(model, newValue, delay = 50) {
+    function animateModelChange(model, newValue, delay = 5) {
       // Cancel any in-progress animation
       if (model.__animationInterval) {
         clearInterval(model.__animationInterval);

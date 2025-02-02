@@ -23,6 +23,22 @@ export const advancedRustExampleActions: Array<IAction> = [
     },
     {
         "name": "author-speak-before",
+        "value": "Here's the link for those who are interested"
+    },
+    {
+        "name": "editor-type",
+        "value": "// https://adventofcode.com/2024/day/11"
+    },
+    {
+        "name": "editor-enter",
+        "value": "1"
+    },
+    {
+        "name": "editor-type",
+        "value": "// First, let's implement a naive solution for Part 1"
+    },
+    {
+        "name": "author-speak-before",
         "value": "Let's start by looking at the problem. We need to simulate some strange stones that change every time we blink..."
     },
     {

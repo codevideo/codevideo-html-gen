@@ -5,13 +5,16 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "codevideo-html-gen": "dist/index.js"
+    "codevideo-html-gen": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc && npm run copy-templates",
-    "copy-templates": "copyfiles -u 2 \"src/html/**/*\" dist/html",
-    "start": "tsc && npm run copy-templates && node dist/index.js",
-    "test": "jest"
+    "build": "rimraf dist && rollup -c && npm run copy-templates-prod",
+    "copy-templates-prod": "copyfiles -u 2 \"src/html/**/*\" dist/html",
+    "copy-templates-dev": "copyfiles -u 2 \"src/html/**/*\" dev/html",
+    "start": "tsc && npm run copy-templates-dev && node dev/cli.js",
+    "dev": "nodemon --exec ts-node-esm src/cli.ts",
+    "clean": "rimraf dist dev",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -31,9 +34,19 @@
     "@fullstackcraftllc/codevideo-virtual-ide": "^1.0.5"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.2",
+    "@rollup/plugin-html": "^2.0.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.13.0",
     "@types/yargs": "^17.0.33",
     "copyfiles": "^2.4.1",
+    "nodemon": "^3.1.9",
+    "rimraf": "^6.0.1",
+    "rollup": "^4.34.0",
+    "ts-node": "^10.9.2",
+    "tslib": "^2.8.1",
     "typescript": "^5.7.3"
   }
 }
