@@ -32,6 +32,7 @@ export const main = () => {
     const fileSizeInMB = fileSizeInBytes / (1024 * 1024);
 
     console.log("HTML written to " + fullOutputPath, "Size: " + fileSizeInMB.toFixed(2) + " MB");
+    console.log("Open in a legends browser (i.e. Chrome) at: file://" + fullOutputPath);
 }
 
 main();

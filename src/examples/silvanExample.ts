@@ -11,7 +11,7 @@ export const silvanExample: Array<IAction> = [
   },
   {
     "name": "author-speak-before",
-    "value": "Hi Silvan. I just wanted to say I'm pretty sure your the best developer I've ever met in my life, truly. Huh. That sounded sarcastic... but just trust me. It's hard to express myself with this crappy google speech synthesis API."
+    "value": "Hi Silvan. I just wanted to say I'm pretty sure your the best software engineer I've ever met in my life, truly. Haaa... That sounded sarcastic... but just trust me. It's hard to express myself with this crappy google speech synthesis API."
   },
   {
     "name": "author-speak-before",
@@ -19,7 +19,7 @@ export const silvanExample: Array<IAction> = [
   },
   {
     "name": "author-speak-before",
-    "value": "But enough talk. Its time to write some code! As you can see here, I've got an axeaml file prepared here... That's right, you guessed it... it's time to write... SOME WPF!!!"
+    "value": "But enough talk. Its time to write some code! As you can see here, I've got an axeaml file prepared... That's right, you guessed it... it's time to write... SOME WPF!!!"
   },
   {
     "name": "editor-type",
@@ -52,11 +52,11 @@ export const silvanExample: Array<IAction> = [
   },
   {
     "name": "author-speak-before",
-    "value": "Now, I know this looks like Chat GPT or some crap. But I can assure you its 100% deterministic event sourcing! Yes that's right folks, we love uncle bob!"
+    "value": "Now, I know this looks like Chat GPT or some shit. But I can assure you its 100% deterministic event sourcing for the I-D-E! Yes that's right folks, we love uncle bob!"
   },
   {
     "name": "author-speak-before",
-    "value": "But... oh my god, how could i forget the code behind?!"
+    "value": "But... oh my god, how could I forget the code behind file?! Jonathan, or der Burtscher, would rage at me... Let's make the code behind file immediately..."
   },
   {
     "name": 'file-explorer-create-file',
@@ -88,10 +88,10 @@ namespace MyWPFApp
   },
   {
     "name": 'author-speak-before',
-    "value": 'Whew, thank god. I nearly forgot!'
+    "value": 'Thank god! I nearly forgot it... but now all is well'
   },
   {
     "name": 'author-speak-before',
-    "value": "Anyways, if I don't see you sooner, I'll see you on Thursday for the Go presentation... and go go go GU ARE ANNI?!?"
+    "value": "Anyways, if I don't see you sooner, I'll see you on Thursday for the Go presentation... and go go go GU ARE ANNI?!? Wow... google speech synthesis really is shit... oh man"
   },
 ]

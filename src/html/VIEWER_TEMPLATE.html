@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>VirtualIDE Snapshot Viewer</title>
+  <title>CodeVideo</title>
   <!-- Include the Monaco Editor loader script -->
   <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.27.0/min/vs/loader.js"></script>
   <style>
@@ -53,6 +53,15 @@
   <div id="snapshot-container"></div>
   <div id="nav-indicator"></div>
   <script>
+    // Function to get query parameters from the URL
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const value = urlParams.get(name);
+      console.log("resolved ", name, " as ", value)
+      return value === "" ? null : value;
+    }
+  </script>
+  <script>
     // The snapshots array built from the actions.
     // This placeholder will be replaced with a JSON string.
     var snapshots = __SNAPSHOTS_JSON__;
@@ -67,39 +76,63 @@
       if (filename.endsWith('.js')) return 'javascript';
       if (filename.endsWith('.ts')) return 'typescript';
       if (filename.endsWith('.rs')) return 'rust';
+      if (filename.endsWith('.cs')) return 'csharp';
+      if (filename.endsWith('.go')) return 'go';
+      if (filename.endsWith('.py')) return 'python';
+      if (filename.endsWith('.java')) return 'java';
+      if (filename.endsWith('.c') || filename.endsWith('.h')) return 'c';
+      if (filename.endsWith('.cpp') || filename.endsWith('.hpp')) return 'cpp';
+      if (filename.endsWith('.html')) return 'html';
+      if (filename.endsWith('.css')) return 'css';
+      if (filename.endsWith('.json')) return 'json';
+      if (filename.endsWith('.yaml') || filename.endsWith('.yml')) return 'yaml';
+      if (filename.endsWith('.xml')) return 'xml';
+      if (filename.endsWith('.md')) return 'markdown';
+      if (filename.endsWith('.xaml')) return 'xml';
+      
       // Add more mappings as needed...
       return 'plaintext';
     }
 
     // Update the editor area with file tabs and Monaco models
-    function updateEditorArea(editorsData) {
+    function updateEditorArea(editors) {
       const tabsContainer = document.getElementById("editor-tabs");
       tabsContainer.innerHTML = "";
 
-      editorsData.forEach((editor, index) => {
-        // Create a tab for each file
+      // Create a tab for each file.
+      editors.forEach((editor, index) => {
         const tab = document.createElement("div");
         tab.textContent = editor.filename;
+        // Optionally set a data attribute for later reference.
+        tab.setAttribute("data-filename", editor.filename);
+
+        // Style the tab.
         tab.style.display = "inline-block";
         tab.style.padding = "2px 5px";
         tab.style.border = "1px solid black";
         tab.style.marginRight = "5px";
-        // Mark the first tab as active by default
-        tab.style.background = index === 0 ? "#ddd" : "#fff";
         tab.style.cursor = "pointer";
+
+        // Use the isActive property to determine if the tab should be active
+        const isActive = editor.isActive;
+        tab.style.background = isActive ? "#ddd" : "#fff";
+
+        // Add click handler: clicking a tab sets it as active and switches the model.
         tab.addEventListener("click", () => {
-          // Remove active highlight from all tabs
+          // Remove the active styling from all tabs.
           Array.from(tabsContainer.children).forEach(child => child.style.background = "#fff");
+          // Set the clicked tab to active.
           tab.style.background = "#ddd";
-          // Switch Monaco editor to the selected file’s model
+          // Switch Monaco editor to the selected file's model.
           const model = window.monacoModels[editor.filename];
           if (model) {
             window.monacoEditor.setModel(model);
           }
         });
+
         tabsContainer.appendChild(tab);
 
-        // Create or update Monaco model for this file
+        // Create or update the Monaco model for this file.
         if (!window.monacoModels[editor.filename]) {
           window.monacoModels[editor.filename] = monaco.editor.createModel(
             editor.content,
@@ -108,20 +141,17 @@
         } else {
           const model = window.monacoModels[editor.filename];
           if (model.getValue() !== editor.content) {
-            // animate
             animateModelChange(model, editor.content);
           }
-          // TODO: if animate query is set to false, do this instead:
-  //         if (model.getValue() !== editor.content) {
-  //   model.setValue(editor.content);
-  // }
+          // If you prefer a non-animated update, you could simply use:
+          // model.setValue(editor.content);
         }
       });
 
-      // Set the Monaco editor’s model to the first file’s model (if any)
-      if (editorsData.length > 0) {
-        window.monacoEditor.setModel(window.monacoModels[editorsData[0].filename]);
-      }
+      // Determine which file should be initially active:
+      // Use the editor whose isActive property is true, or default to the first file.
+      const activeEditor = editors.find(editor => editor.isActive) || editors[0];
+      window.monacoEditor.setModel(window.monacoModels[activeEditor.filename]);
     }
 
     /**
@@ -139,7 +169,7 @@
         clearInterval(model.__animationInterval);
         model.__animationInterval = null;
       }
-      
+
       const oldValue = model.getValue();
       if (oldValue === newValue) return;
 
@@ -176,8 +206,8 @@
               current = current.slice(0, -1);
               model.setValue(
                 oldValue.substring(0, prefixLen) +
-                  current +
-                  oldValue.substring(oldValue.length - suffixLen)
+                current +
+                oldValue.substring(oldValue.length - suffixLen)
               );
             } else {
               clearInterval(model.__animationInterval);
@@ -200,8 +230,8 @@
               const addition = newMiddle.substring(0, additionIndex);
               model.setValue(
                 oldValue.substring(0, prefixLen) +
-                  addition +
-                  oldValue.substring(oldValue.length - suffixLen)
+                addition +
+                oldValue.substring(oldValue.length - suffixLen)
               );
             } else {
               clearInterval(model.__animationInterval);
@@ -226,8 +256,19 @@
       currentIndex = index;
       var container = document.getElementById("snapshot-container");
       container.innerHTML = snapshots[index].html;
-      document.getElementById("nav-indicator").innerText =
-        "Step " + (index + 1) + " of " + snapshots.length;
+      var navIndicator = document.getElementById("nav-indicator");
+
+      // step div is optional, but if true we should remove the nav indicator
+      const hideSteps = getQueryParam("hideSteps")
+
+      if (hideSteps === "true") {
+        // remove entirely if it still exists
+        navIndicator.remove()
+      }
+
+      if (navIndicator) {
+        navIndicator.innerText = "Step " + (index + 1) + " of " + snapshots.length;
+      }
 
       // Look for an editor area and initialize Monaco if found.
       var editorContainer = document.getElementById("monaco-editor-container");
@@ -240,7 +281,7 @@
           value: "",
           language: "javascript", // default language; updated below when switching files
           theme: "vs-light",
-          fontSize: 20,
+          fontSize: 16,
         });
 
         // Update the editor area using the snapshot's editor data.

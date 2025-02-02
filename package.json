@@ -1,5 +1,5 @@
 {
-  "name": "codevideo-html-gen",
+  "name": "@fullstackcraftllc/codevideo-html-gen",
   "version": "1.0.0",
   "description": "Generates a standalone HTML file for a time travelable IDE experience.",
   "type": "module",
@@ -14,7 +14,8 @@
     "start": "tsc && npm run copy-templates-dev && node dev/cli.js",
     "dev": "nodemon --exec ts-node-esm src/cli.ts",
     "clean": "rimraf dist dev",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "type-check": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -31,7 +32,7 @@
   },
   "homepage": "https://github.com/codevideo/codevideo-html-gen#readme",
   "dependencies": {
-    "@fullstackcraftllc/codevideo-virtual-ide": "^1.0.5"
+    "@fullstackcraftllc/codevideo-virtual-ide": "^1.0.6"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.2",

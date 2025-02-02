@@ -76,7 +76,7 @@ export const renderSnapshot = (snapshot: any): string => {
         <!-- Main IDE Area -->
         <div style="flex: 1; display: flex;">
           <!-- File Explorer -->
-          <div style="width: 200px; border: 1px solid black; padding: 5px; overflow: auto;">
+          <div style="width: 250px; border: 1px solid black; padding: 5px; overflow: auto;">
             ${fileExplorerHTML}
           </div>
           <!-- Editor Area -->
