@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>VirtualIDE Snapshot Viewer</title>
+  <!-- Include the Monaco Editor loader script -->
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.27.0/min/vs/loader.js"></script>
+  <style>
+    body {
+      font-size: 18px;
+      margin: 0;
+      padding: 0;
+      font-family: monospace;
+      background: #fafafa;
+    }
+
+    #snapshot-container {
+      height: calc(100vh - 40px);
+      overflow: auto;
+      position: relative;
+    }
+
+    #nav-indicator {
+      text-align: center;
+      padding: 8px;
+      background: #eee;
+      border-top: 1px solid black;
+    }
+
+    /* Editor area styling */
+    #editor-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    #editor-tabs {
+      height: 30px;
+      border-bottom: 1px solid black;
+      overflow-x: auto;
+      padding: 5px;
+    }
+
+    #monaco-editor-container {
+      flex: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="snapshot-container"></div>
+  <div id="nav-indicator"></div>
+  <script>
+    // The snapshots array built from the actions.
+    // This placeholder will be replaced with a JSON string.
+    var snapshots = __SNAPSHOTS_JSON__;
+    var currentIndex = 0;
+  </script>
+  <script>
+    // Global registry for Monaco models
+    window.monacoModels = {};
+
+    // Helper: determine Monaco language based on filename
+    function getLanguageForFilename(filename) {
+      if (filename.endsWith('.js')) return 'javascript';
+      if (filename.endsWith('.ts')) return 'typescript';
+      if (filename.endsWith('.rs')) return 'rust';
+      // Add more mappings as needed...
+      return 'plaintext';
+    }
+
+    // Update the editor area with file tabs and Monaco models
+    function updateEditorArea(editorsData) {
+      const tabsContainer = document.getElementById("editor-tabs");
+      tabsContainer.innerHTML = "";
+
+      editorsData.forEach((editor, index) => {
+        // Create a tab for each file
+        const tab = document.createElement("div");
+        tab.textContent = editor.filename;
+        tab.style.display = "inline-block";
+        tab.style.padding = "2px 5px";
+        tab.style.border = "1px solid black";
+        tab.style.marginRight = "5px";
+        // Mark the first tab as active by default
+        tab.style.background = index === 0 ? "#ddd" : "#fff";
+        tab.style.cursor = "pointer";
+        tab.addEventListener("click", () => {
+          // Remove active highlight from all tabs
+          Array.from(tabsContainer.children).forEach(child => child.style.background = "#fff");
+          tab.style.background = "#ddd";
+          // Switch Monaco editor to the selected file’s model
+          const model = window.monacoModels[editor.filename];
+          if (model) {
+            window.monacoEditor.setModel(model);
+          }
+        });
+        tabsContainer.appendChild(tab);
+
+        // Create or update Monaco model for this file
+        if (!window.monacoModels[editor.filename]) {
+          window.monacoModels[editor.filename] = monaco.editor.createModel(
+            editor.content,
+            getLanguageForFilename(editor.filename)
+          );
+        } else {
+          const model = window.monacoModels[editor.filename];
+          if (model.getValue() !== editor.content) {
+            // animate
+            animateModelChange(model, editor.content);
+          }
+          // TODO: if animate query is set to false, do this instead:
+  //         if (model.getValue() !== editor.content) {
+  //   model.setValue(editor.content);
+  // }
+        }
+      });
+
+      // Set the Monaco editor’s model to the first file’s model (if any)
+      if (editorsData.length > 0) {
+        window.monacoEditor.setModel(window.monacoModels[editorsData[0].filename]);
+      }
+    }
+
+    /**
+     * Animate changes to a Monaco model from its current value to a new value.
+     *
+     * This function computes the longest common prefix and suffix of the two strings.
+     * It then “erases” the differing middle (if any) letter‐by‐letter before “typing”
+     * in the new middle text. (For a simple typing action this should look nice.)
+     *
+     * You can adjust the delay (in milliseconds) between steps.
+     */
+    function animateModelChange(model, newValue, delay = 50) {
+      // Cancel any in-progress animation
+      if (model.__animationInterval) {
+        clearInterval(model.__animationInterval);
+        model.__animationInterval = null;
+      }
+      
+      const oldValue = model.getValue();
+      if (oldValue === newValue) return;
+
+      // Find the longest common prefix.
+      let prefixLen = 0;
+      while (
+        prefixLen < oldValue.length &&
+        prefixLen < newValue.length &&
+        oldValue[prefixLen] === newValue[prefixLen]
+      ) {
+        prefixLen++;
+      }
+      // Find the longest common suffix after the prefix.
+      let suffixLen = 0;
+      while (
+        suffixLen < (oldValue.length - prefixLen) &&
+        suffixLen < (newValue.length - prefixLen) &&
+        oldValue[oldValue.length - 1 - suffixLen] === newValue[newValue.length - 1 - suffixLen]
+      ) {
+        suffixLen++;
+      }
+
+      // Extract the differing “middle” parts.
+      const oldMiddle = oldValue.substring(prefixLen, oldValue.length - suffixLen);
+      const newMiddle = newValue.substring(prefixLen, newValue.length - suffixLen);
+
+      // First, animate deletion (if needed).
+      function animateDeletion(callback) {
+        if (oldMiddle.length > 0) {
+          let current = oldMiddle;
+          model.__animationInterval = setInterval(() => {
+            if (current.length > 0) {
+              // Remove one character from the end
+              current = current.slice(0, -1);
+              model.setValue(
+                oldValue.substring(0, prefixLen) +
+                  current +
+                  oldValue.substring(oldValue.length - suffixLen)
+              );
+            } else {
+              clearInterval(model.__animationInterval);
+              model.__animationInterval = null;
+              callback();
+            }
+          }, delay);
+        } else {
+          callback();
+        }
+      }
+
+      // Then, animate addition (if needed).
+      function animateAddition() {
+        if (newMiddle.length > 0) {
+          let additionIndex = 0;
+          model.__animationInterval = setInterval(() => {
+            if (additionIndex < newMiddle.length) {
+              additionIndex++;
+              const addition = newMiddle.substring(0, additionIndex);
+              model.setValue(
+                oldValue.substring(0, prefixLen) +
+                  addition +
+                  oldValue.substring(oldValue.length - suffixLen)
+              );
+            } else {
+              clearInterval(model.__animationInterval);
+              model.__animationInterval = null;
+              // Finalize the value (in case of rounding issues)
+              model.setValue(newValue);
+            }
+          }, delay);
+        } else {
+          // If there is no new text to add, simply set the final value.
+          model.setValue(newValue);
+        }
+      }
+
+      animateDeletion(animateAddition);
+    }
+
+
+    // Display a snapshot: inject HTML and initialize Monaco if needed.
+    function showSnapshot(index) {
+      if (index < 0 || index >= snapshots.length) return;
+      currentIndex = index;
+      var container = document.getElementById("snapshot-container");
+      container.innerHTML = snapshots[index].html;
+      document.getElementById("nav-indicator").innerText =
+        "Step " + (index + 1) + " of " + snapshots.length;
+
+      // Look for an editor area and initialize Monaco if found.
+      var editorContainer = document.getElementById("monaco-editor-container");
+      if (editorContainer) {
+        // Dispose any existing editor instance.
+        if (window.monacoEditor) {
+          window.monacoEditor.dispose();
+        }
+        window.monacoEditor = monaco.editor.create(editorContainer, {
+          value: "",
+          language: "javascript", // default language; updated below when switching files
+          theme: "vs-light",
+          fontSize: 20,
+        });
+
+        // Update the editor area using the snapshot's editor data.
+        updateEditorArea(snapshots[index].editors);
+      }
+
+      // If the snapshot includes a speech message, speak it.
+      var speakText = snapshots[index].speak;
+      if (speakText) {
+        var utterance = new SpeechSynthesisUtterance(speakText);
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    // Listen for arrow keys to navigate snapshots.
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowRight") {
+        if (currentIndex < snapshots.length - 1) {
+          showSnapshot(currentIndex + 1);
+        }
+      } else if (event.key === "ArrowLeft") {
+        if (currentIndex > 0) {
+          showSnapshot(currentIndex - 1);
+        }
+      }
+    });
+
+    // Configure and load Monaco.
+    require.config({
+      paths: {
+        vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.27.0/min/vs",
+      },
+    });
+    require(["vs/editor/editor.main"], function () {
+      // When Monaco is ready, display the first snapshot.
+      showSnapshot(0);
+      window.addEventListener("resize", function () {
+        if (window.monacoEditor) {
+          window.monacoEditor.layout();
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

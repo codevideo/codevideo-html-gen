@@ -1,0 +1,39 @@
+{
+  "name": "codevideo-html-gen",
+  "version": "1.0.0",
+  "description": "Generates a standalone HTML file for a time travelable IDE experience.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "codevideo-html-gen": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc && npm run copy-templates",
+    "copy-templates": "copyfiles -u 2 \"src/html/**/*\" dist/html",
+    "start": "tsc && npm run copy-templates && node dist/index.js",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codevideo/codevideo-html-gen.git"
+  },
+  "keywords": [
+    "CodeVideo",
+    "TypeScript"
+  ],
+  "author": "Chris Frewin <frewin.christopher@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/codevideo/codevideo-html-gen/issues"
+  },
+  "homepage": "https://github.com/codevideo/codevideo-html-gen#readme",
+  "dependencies": {
+    "@fullstackcraftllc/codevideo-virtual-ide": "^1.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/yargs": "^17.0.33",
+    "copyfiles": "^2.4.1",
+    "typescript": "^5.7.3"
+  }
+}
