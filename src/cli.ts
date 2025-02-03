@@ -4,6 +4,11 @@ import * as path from "path";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { silvanExample } from "./examples/silvanExample.js";
+import { franziExample } from "./examples/franziExample.js";
+import { vroniExample } from "./examples/vroniExample.js";
+import { simonExample } from "./examples/simonExample.js";
+import { advancedRustExampleActions } from "./examples/advancedRustExampleActions.js";
+import { twoFileComplexEditsExample } from "./examples/twoFileComplexEditsExample.js";
 
 export const main = () => {
     // define the output directory for the HTML snapshots
@@ -16,7 +21,7 @@ export const main = () => {
     }
 
     // Build the final viewer HTML using the external template.
-    const viewerHTML = buildViewerHTML(silvanExample);
+    const viewerHTML = buildViewerHTML(twoFileComplexEditsExample);
 
     // Write the viewer HTML to a file
     const fullOutputPath = path.join(htmlOutputDir, "codevideo.html");

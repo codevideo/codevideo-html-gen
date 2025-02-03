@@ -4,6 +4,36 @@
 
 Generates a standalone HTML file for a time travelable IDE experience.
 
+## Usage
+
+Install the package:
+
+```shell
+npm install @fullstackcraftllc/codevideo-html-gen
+```
+
+Consume it in any node script:
+
+```typescript
+const viewerHTML = buildViewerHTML(myActions);
+fs.writeFileSync(
+    path.join(htmlOutputDir, "ide-viewer.html"),
+    viewerHTML,
+    { encoding: "utf8" }
+);
+```
+
+Where `myActions` is an array of `IAction` from `@fullstackcraftllc/codevideo-types`:
+
+```typescript
+interface IAction {
+    name: string;
+    value: string;
+}
+```
+
+However, names are restricted to various IDE actions. See the []`@fullstackcraftllc/codevideo-types`]() package for more information.
+
 ## Local development usage
 
 Install dependencies:

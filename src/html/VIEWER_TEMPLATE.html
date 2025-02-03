@@ -57,9 +57,12 @@
     function getQueryParam(name) {
       const urlParams = new URLSearchParams(window.location.search);
       const value = urlParams.get(name);
-      console.log("resolved ", name, " as ", value)
       return value === "" ? null : value;
     }
+  </script>
+  <script>
+    // Auto-replay snapshots global
+    var autoReplay = getQueryParam("replay") === "true";
   </script>
   <script>
     // The snapshots array built from the actions.
@@ -89,8 +92,6 @@
       if (filename.endsWith('.xml')) return 'xml';
       if (filename.endsWith('.md')) return 'markdown';
       if (filename.endsWith('.xaml')) return 'xml';
-      
-      // Add more mappings as needed...
       return 'plaintext';
     }
 
@@ -99,31 +100,24 @@
       const tabsContainer = document.getElementById("editor-tabs");
       tabsContainer.innerHTML = "";
 
-      // Create a tab for each file.
       editors.forEach((editor, index) => {
+        if (!editor.filename) {
+          return;
+        }
         const tab = document.createElement("div");
         tab.textContent = editor.filename;
-        // Optionally set a data attribute for later reference.
         tab.setAttribute("data-filename", editor.filename);
-
-        // Style the tab.
         tab.style.display = "inline-block";
         tab.style.padding = "2px 5px";
         tab.style.border = "1px solid black";
         tab.style.marginRight = "5px";
         tab.style.cursor = "pointer";
-
-        // Use the isActive property to determine if the tab should be active
         const isActive = editor.isActive;
         tab.style.background = isActive ? "#ddd" : "#fff";
 
-        // Add click handler: clicking a tab sets it as active and switches the model.
         tab.addEventListener("click", () => {
-          // Remove the active styling from all tabs.
           Array.from(tabsContainer.children).forEach(child => child.style.background = "#fff");
-          // Set the clicked tab to active.
           tab.style.background = "#ddd";
-          // Switch Monaco editor to the selected file's model.
           const model = window.monacoModels[editor.filename];
           if (model) {
             window.monacoEditor.setModel(model);
@@ -132,7 +126,6 @@
 
         tabsContainer.appendChild(tab);
 
-        // Create or update the Monaco model for this file.
         if (!window.monacoModels[editor.filename]) {
           window.monacoModels[editor.filename] = monaco.editor.createModel(
             editor.content,
@@ -143,28 +136,16 @@
           if (model.getValue() !== editor.content) {
             animateModelChange(model, editor.content);
           }
-          // If you prefer a non-animated update, you could simply use:
-          // model.setValue(editor.content);
         }
       });
 
-      // Determine which file should be initially active:
-      // Use the editor whose isActive property is true, or default to the first file.
       const activeEditor = editors.find(editor => editor.isActive) || editors[0];
-      window.monacoEditor.setModel(window.monacoModels[activeEditor.filename]);
+      if (activeEditor && activeEditor.filename) {
+        window.monacoEditor.setModel(window.monacoModels[activeEditor.filename]);
+      }
     }
 
-    /**
-     * Animate changes to a Monaco model from its current value to a new value.
-     *
-     * This function computes the longest common prefix and suffix of the two strings.
-     * It then “erases” the differing middle (if any) letter‐by‐letter before “typing”
-     * in the new middle text. (For a simple typing action this should look nice.)
-     *
-     * You can adjust the delay (in milliseconds) between steps.
-     */
     function animateModelChange(model, newValue, delay = 5) {
-      // Cancel any in-progress animation
       if (model.__animationInterval) {
         clearInterval(model.__animationInterval);
         model.__animationInterval = null;
@@ -173,7 +154,6 @@
       const oldValue = model.getValue();
       if (oldValue === newValue) return;
 
-      // Find the longest common prefix.
       let prefixLen = 0;
       while (
         prefixLen < oldValue.length &&
@@ -182,7 +162,6 @@
       ) {
         prefixLen++;
       }
-      // Find the longest common suffix after the prefix.
       let suffixLen = 0;
       while (
         suffixLen < (oldValue.length - prefixLen) &&
@@ -192,17 +171,14 @@
         suffixLen++;
       }
 
-      // Extract the differing “middle” parts.
       const oldMiddle = oldValue.substring(prefixLen, oldValue.length - suffixLen);
       const newMiddle = newValue.substring(prefixLen, newValue.length - suffixLen);
 
-      // First, animate deletion (if needed).
       function animateDeletion(callback) {
         if (oldMiddle.length > 0) {
           let current = oldMiddle;
           model.__animationInterval = setInterval(() => {
             if (current.length > 0) {
-              // Remove one character from the end
               current = current.slice(0, -1);
               model.setValue(
                 oldValue.substring(0, prefixLen) +
@@ -220,7 +196,6 @@
         }
       }
 
-      // Then, animate addition (if needed).
       function animateAddition() {
         if (newMiddle.length > 0) {
           let additionIndex = 0;
@@ -236,12 +211,10 @@
             } else {
               clearInterval(model.__animationInterval);
               model.__animationInterval = null;
-              // Finalize the value (in case of rounding issues)
               model.setValue(newValue);
             }
           }, delay);
         } else {
-          // If there is no new text to add, simply set the final value.
           model.setValue(newValue);
         }
       }
@@ -249,55 +222,57 @@
       animateDeletion(animateAddition);
     }
 
-
-    // Display a snapshot: inject HTML and initialize Monaco if needed.
-    function showSnapshot(index) {
+    // Display a snapshot and handle auto-replay
+    async function showSnapshot(index) {
       if (index < 0 || index >= snapshots.length) return;
+
       currentIndex = index;
       var container = document.getElementById("snapshot-container");
       container.innerHTML = snapshots[index].html;
       var navIndicator = document.getElementById("nav-indicator");
 
-      // step div is optional, but if true we should remove the nav indicator
       const hideSteps = getQueryParam("hideSteps")
-
-      if (hideSteps === "true") {
-        // remove entirely if it still exists
+      if (navIndicator && hideSteps === "true") {
         navIndicator.remove()
       }
-
       if (navIndicator) {
         navIndicator.innerText = "Step " + (index + 1) + " of " + snapshots.length;
       }
 
-      // Look for an editor area and initialize Monaco if found.
       var editorContainer = document.getElementById("monaco-editor-container");
       if (editorContainer) {
-        // Dispose any existing editor instance.
         if (window.monacoEditor) {
           window.monacoEditor.dispose();
         }
         window.monacoEditor = monaco.editor.create(editorContainer, {
           value: "",
-          language: "javascript", // default language; updated below when switching files
+          language: "javascript",
           theme: "vs-light",
           fontSize: 16,
         });
 
-        // Update the editor area using the snapshot's editor data.
-        updateEditorArea(snapshots[index].editors);
+        await updateEditorArea(snapshots[index].editors);
       }
 
-      // If the snapshot includes a speech message, speak it.
-      var speakText = snapshots[index].speak;
-      if (speakText) {
-        var utterance = new SpeechSynthesisUtterance(speakText);
+      // Handle speech synthesis
+      if (snapshots[index].speak) {
         window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(utterance);
+        await new Promise(resolve => {
+          const utterance = new SpeechSynthesisUtterance(snapshots[index].speak);
+          utterance.onend = resolve;
+          window.speechSynthesis.speak(utterance);
+        });
+      }
+
+      // Auto-replay logic - now waits for everything including speech
+      if (autoReplay && index < snapshots.length - 1) {
+        // Use a timeout wrapped in a promise
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await showSnapshot(index + 1);
       }
     }
 
-    // Listen for arrow keys to navigate snapshots.
+    // Listen for arrow keys to navigate snapshots
     document.addEventListener("keydown", function (event) {
       if (event.key === "ArrowRight") {
         if (currentIndex < snapshots.length - 1) {
@@ -310,14 +285,15 @@
       }
     });
 
-    // Configure and load Monaco.
+    // Configure and load Monaco
     require.config({
       paths: {
         vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.27.0/min/vs",
       },
     });
+
+    // Initialize Monaco and start replay if needed
     require(["vs/editor/editor.main"], function () {
-      // When Monaco is ready, display the first snapshot.
       showSnapshot(0);
       window.addEventListener("resize", function () {
         if (window.monacoEditor) {
