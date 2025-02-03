@@ -1,1 +1,1 @@
-export { buildViewerHTML } from "./buildViewerHtml.js";
+export { buildHTML as buildViewerHTML } from "./buildHTML.js";
